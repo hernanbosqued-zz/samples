@@ -25,12 +25,17 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.RectF;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.ViewConfiguration;
-import android.widget.Toast;
+
+import static android.view.MotionEvent.ACTION_POINTER_INDEX_MASK;
+import static android.view.MotionEvent.ACTION_POINTER_INDEX_SHIFT;
+import static android.view.MotionEvent.INVALID_POINTER_ID;
 
 
 /**
@@ -49,18 +54,11 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
 
     public static final Integer DEFAULT_MINIMUM = 0;
     public static final Integer DEFAULT_MAXIMUM = 100;
-    public static final int HEIGHT_IN_DP = 30;
-    public static final int TEXT_LATERAL_PADDING_IN_DP = 3;
-    private static final int INITIAL_PADDING_IN_DP = 8;
-    private final int LINE_HEIGHT_IN_DP = 1;
+    private final int LINE_HEIGHT_IN_DP = 2;
+
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Bitmap thumbImage = BitmapFactory.decodeResource(getResources(), R.drawable.seek_thumb_normal);
-    private final Bitmap thumbPressedImage = BitmapFactory.decodeResource(getResources(), R.drawable.seek_thumb_pressed);
-    private final Bitmap thumbDisabledImage = BitmapFactory.decodeResource(getResources(), R.drawable.seek_thumb_disabled);
-    private final float thumbWidth = thumbImage.getWidth();
-    private final float thumbHalfWidth = 0.5f * thumbWidth;
-    private final float thumbHalfHeight = 0.5f * thumbImage.getHeight();
-    private float INITIAL_PADDING;
+    private final Bitmap thumbImage = drawableToBitmap(R.drawable.circle);
+
     private float padding;
     private int absoluteMinValue, absoluteMaxValue;
     private double absoluteMinValuePrim, absoluteMaxValuePrim;
@@ -68,38 +66,13 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
     private double normalizedMaxValue = 1d;
     private Thumb pressedThumb = null;
     private boolean notifyWhileDragging = false;
-    private int steps = 10;
-
+    private int steps = 100;
     private OnRangeSeekBarChangeListener listener;
-    /**
-     * Default color of a {@link RangeSeekBar}, #FF33B5E5. This is also known as "Ice Cream Sandwich" blue.
-     */
-    public static final int DEFAULT_COLOR = Color.argb(0xFF, 0x33, 0xB5, 0xE5);
-    /**
-     * An invalid pointer id.
-     */
-    public static final int INVALID_POINTER_ID = 255;
-
-    // Localized constants from MotionEvent for compatibility
-    // with API < 8 "Froyo".
-    public static final int ACTION_POINTER_UP = 0x6, ACTION_POINTER_INDEX_MASK = 0x0000ff00, ACTION_POINTER_INDEX_SHIFT = 8;
-
     private float mDownMotionX;
-
     private int mActivePointerId = INVALID_POINTER_ID;
-
     private int mScaledTouchSlop;
-
     private boolean mIsDragging;
-
-    private int mTextOffset;
-    private int mTextSize;
-    private int mDistanceToTop;
     private RectF mRect;
-
-    private static final int DEFAULT_TEXT_SIZE_IN_DP = 14;
-    private static final int DEFAULT_TEXT_DISTANCE_TO_BUTTON_IN_DP = 8;
-    private static final int DEFAULT_TEXT_DISTANCE_TO_TOP_IN_DP = 8;
     private boolean mSingleThumb;
 
     public RangeSeekBar(Context context) {
@@ -135,14 +108,8 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
 
         setValuePrimAndNumberType();
 
-        INITIAL_PADDING = PixelUtil.dpToPx(context, INITIAL_PADDING_IN_DP);
-
-        mTextSize = PixelUtil.dpToPx(context, DEFAULT_TEXT_SIZE_IN_DP);
-        mDistanceToTop = PixelUtil.dpToPx(context, DEFAULT_TEXT_DISTANCE_TO_TOP_IN_DP);
-        mTextOffset = this.mTextSize + PixelUtil.dpToPx(context, DEFAULT_TEXT_DISTANCE_TO_BUTTON_IN_DP) + this.mDistanceToTop;
-
         float lineHeight = PixelUtil.dpToPx(context, LINE_HEIGHT_IN_DP);
-        mRect = new RectF(padding, mTextOffset + thumbHalfHeight - lineHeight / 2, getWidth() - padding, mTextOffset + thumbHalfHeight + lineHeight / 2);
+        mRect = new RectF(padding, thumbImage.getHeight() / 2 - lineHeight / 2, getWidth() - padding, thumbImage.getHeight() / 2 + lineHeight / 2);
 
         setFocusable(true);
         setFocusableInTouchMode(true);
@@ -155,8 +122,6 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
         setValuePrimAndNumberType();
     }
 
-    @SuppressWarnings("unchecked")
-    // only used to set default values when initialised from XML without any values specified
     private void setRangeToDefaultValues() {
         this.absoluteMinValue = DEFAULT_MINIMUM;
         this.absoluteMaxValue = DEFAULT_MAXIMUM;
@@ -166,15 +131,6 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
     private void setValuePrimAndNumberType() {
         absoluteMinValuePrim = absoluteMinValue;
         absoluteMaxValuePrim = absoluteMaxValue;
-    }
-
-    public void resetSelectedValues() {
-        setSelectedMinValue(absoluteMinValue);
-        setSelectedMaxValue(absoluteMaxValue);
-    }
-
-    public boolean isNotifyWhileDragging() {
-        return notifyWhileDragging;
     }
 
     /**
@@ -416,7 +372,7 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
             width = MeasureSpec.getSize(widthMeasureSpec);
         }
 
-        int height = thumbImage.getHeight() + PixelUtil.dpToPx(getContext(), HEIGHT_IN_DP);
+        int height = thumbImage.getHeight();
         if (MeasureSpec.UNSPECIFIED != MeasureSpec.getMode(heightMeasureSpec)) {
             height = Math.min(height, MeasureSpec.getSize(heightMeasureSpec));
         }
@@ -430,62 +386,31 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
     protected synchronized void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        paint.setTextSize(mTextSize);
         paint.setStyle(Style.FILL);
         paint.setColor(Color.GRAY);
         paint.setAntiAlias(true);
 
-        // draw min and max labels
-        String minLabel = getContext().getString(R.string.demo_min_label);
-        String maxLabel = getContext().getString(R.string.demo_max_label);
-        float minMaxLabelSize = Math.max(paint.measureText(minLabel), paint.measureText(maxLabel));
-        float minMaxHeight = mTextOffset + thumbHalfHeight + mTextSize / 3;
-        canvas.drawText(minLabel, 0, minMaxHeight, paint);
-        canvas.drawText(maxLabel, getWidth() - minMaxLabelSize, minMaxHeight, paint);
-        padding = INITIAL_PADDING + minMaxLabelSize + thumbHalfWidth;
+        padding = thumbImage.getWidth() / 2;
 
         // draw seek bar background line
         mRect.left = padding;
         mRect.right = getWidth() - padding;
         canvas.drawRect(mRect, paint);
 
-        boolean selectedValuesAreDefault = getSelectedMinValue() == getAbsoluteMinValue() && getSelectedMaxValue() == getAbsoluteMaxValue();
-
-        int colorToUseForButtonsAndHighlightedLine = selectedValuesAreDefault ? Color.GRAY : DEFAULT_COLOR;
-
         // draw seek bar active range line
         mRect.left = normalizedToScreen(normalizedMinValue);
         mRect.right = normalizedToScreen(normalizedMaxValue);
 
-        paint.setColor(colorToUseForButtonsAndHighlightedLine);
+        paint.setColor(getResources().getColor(R.color.colorAccent));
         canvas.drawRect(mRect, paint);
 
         // draw minimum thumb if not a single thumb control
         if (!mSingleThumb) {
-            drawThumb(normalizedToScreen(normalizedMinValue), Thumb.MIN.equals(pressedThumb), canvas, selectedValuesAreDefault);
+            drawThumb(normalizedToScreen(normalizedMinValue), canvas);
         }
 
         // draw maximum thumb
-        drawThumb(normalizedToScreen(normalizedMaxValue), Thumb.MAX.equals(pressedThumb), canvas, selectedValuesAreDefault);
-
-        // draw the text if sliders have moved from default edges
-        if (!selectedValuesAreDefault) {
-            paint.setTextSize(mTextSize);
-            paint.setColor(Color.WHITE);
-            // give text a bit more space here so it doesn't get cut off
-            int offset = PixelUtil.dpToPx(getContext(), TEXT_LATERAL_PADDING_IN_DP);
-
-            String minText = String.valueOf(getSelectedMinValue());
-            String maxText = String.valueOf(getSelectedMaxValue());
-            float minTextWidth = paint.measureText(minText) + offset;
-            float maxTextWidth = paint.measureText(maxText) + offset;
-
-            if (!mSingleThumb) {
-                canvas.drawText(minText, normalizedToScreen(normalizedMinValue) - minTextWidth * 0.5f, mDistanceToTop + mTextSize, paint);
-
-            }
-            canvas.drawText(maxText, normalizedToScreen(normalizedMaxValue) - maxTextWidth * 0.5f, mDistanceToTop + mTextSize, paint);
-        }
+        drawThumb(normalizedToScreen(normalizedMaxValue), canvas);
     }
 
     /**
@@ -515,17 +440,10 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
      * Draws the "normal" resp. "pressed" thumb image on specified x-coordinate.
      *
      * @param screenCoord The x-coordinate in screen space where to draw the image.
-     * @param pressed     Is the thumb currently in "pressed" state?
      * @param canvas      The canvas to draw upon.
      */
-    private void drawThumb(float screenCoord, boolean pressed, Canvas canvas, boolean areSelectedValuesDefault) {
-        Bitmap buttonToDraw;
-        if (areSelectedValuesDefault) {
-            buttonToDraw = thumbDisabledImage;
-        } else {
-            buttonToDraw = pressed ? thumbPressedImage : thumbImage;
-        }
-        canvas.drawBitmap(buttonToDraw, screenCoord - thumbHalfWidth, mTextOffset, paint);
+    private void drawThumb(float screenCoord, Canvas canvas) {
+        canvas.drawBitmap(thumbImage, screenCoord - thumbImage.getWidth() / 2, 0, paint);
     }
 
     /**
@@ -557,7 +475,7 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
      * @return true if x-coordinate is in thumb range, false otherwise.
      */
     private boolean isInThumbRange(float touchX, double normalizedThumbValue) {
-        return Math.abs(touchX - normalizedToScreen(normalizedThumbValue)) <= thumbHalfWidth;
+        return Math.abs(touchX - normalizedToScreen(normalizedThumbValue)) <= thumbImage.getWidth() * 3;
     }
 
     /**
@@ -611,7 +529,6 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
     private double screenToNormalized(float screenCoord) {
         int width = getWidth();
         if (width <= 2 * padding) {
-            // prevent division by zero, simply return 0.
             return 0d;
         } else {
             double result = (screenCoord - padding) / (width - 2 * padding);
@@ -627,6 +544,22 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
     public interface OnRangeSeekBarChangeListener {
 
         public void onRangeSeekBarValuesChanged(RangeSeekBar bar, int minValue, int maxValue);
+    }
+
+    public Bitmap drawableToBitmap(int drawableId) {
+
+        Drawable drawable = getResources().getDrawable(drawableId);
+
+        if (drawable instanceof BitmapDrawable) {
+            return ((BitmapDrawable) drawable).getBitmap();
+        }
+
+        Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        drawable.draw(canvas);
+
+        return bitmap;
     }
 
     /**
