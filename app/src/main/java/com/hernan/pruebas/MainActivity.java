@@ -3,7 +3,6 @@ package com.hernan.pruebas;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -13,11 +12,12 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         LinearLayout layout = (LinearLayout) findViewById(R.id.main);
-        RangeFilterView rangeFilterView = new RangeFilterView(this);
-        rangeFilterView.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT));
-        layout.addView(rangeFilterView);
+
+        layout.addView(new RangeFilterView(this));
+        layout.addView(new RangeFilterView(this));
+        layout.addView(new RangeFilterView(this));
+        layout.addView(new RangeFilterView(this));
+        layout.addView(new RangeFilterView(this));
 
 //        final RangeSeekBar seekBar1 = (RangeSeekBar) findViewById(R.id.seekbar1);
 //        final TextView textView1 = (TextView) findViewById(R.id.value1);

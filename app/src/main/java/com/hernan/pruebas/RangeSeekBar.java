@@ -17,7 +17,6 @@ limitations under the License.
 package com.hernan.pruebas;
 
 import android.content.Context;
-import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -28,26 +27,14 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
+
 import static android.view.MotionEvent.INVALID_POINTER_ID;
 
 
-/**
- * Widget that lets users select a minimum and maximum value on a given numerical range.
- * The range value types can be one of Long, Double, Integer, Float, Short, Byte or BigDecimal.<br>
- * <br>
- * Improved {@link MotionEvent} handling for smoother use, anti-aliased painting for improved aesthetics.
- *
- * @author Stephan Tittel (stephan.tittel@kom.tu-darmstadt.de)
- * @author Peter Sinnott (psinnott@gmail.com)
- * @author Thomas Barrasso (tbarrasso@sevenplusandroid.org)
- * @author Alex Florescu (florescu@yahoo-inc.com)
- * @author Michael Keppler (bananeweizen@gmx.de)
- */
 public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
 
-    private final int LINE_HEIGHT_IN_DP = 2;
+    private final int LINE_HEIGHT = 4;
     private final int TOUCH_AREA_GAP = 3;
-    private final int DEFAULT_STEPS = 10;
 
     private double minValue = 0;
     private double maxValue = 1;
@@ -57,32 +44,22 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
     private float padding;
     private Thumb pressedThumb = null;
 
-    private int steps = DEFAULT_STEPS;
     private int activePointerId = INVALID_POINTER_ID;
     private OnRangeSeekBarChangeListener listener;
     private RectF rectF;
 
     public RangeSeekBar(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init(context, attrs);
+        init();
     }
 
     public RangeSeekBar(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        init(context, attrs);
+        init();
     }
 
-    private void init(Context context, AttributeSet attrs) {
-        if (attrs == null) {
-            setSteps(100);
-        } else {
-            TypedArray a = getContext().obtainStyledAttributes(attrs, R.styleable.RangeSeekBar, 0, 0);
-            setSteps(a.getInteger(R.styleable.RangeSeekBar_range, 100) );
-            a.recycle();
-        }
-
-        float lineHeight = PixelUtil.dpToPx(context, LINE_HEIGHT_IN_DP);
-        rectF = new RectF(padding, thumbImage.getHeight() / 2 - lineHeight / 2, getWidth() - padding, thumbImage.getHeight() / 2 + lineHeight / 2);
+    private void init() {
+        rectF = new RectF(padding, thumbImage.getHeight() / 2 - LINE_HEIGHT / 2, getWidth() - padding, thumbImage.getHeight() / 2 + LINE_HEIGHT / 2);
 
         setFocusable(true);
         setFocusableInTouchMode(true);
@@ -186,9 +163,9 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
         final float x = event.getX(pointerIndex);
 
         if (Thumb.MIN.equals(pressedThumb)) {
-            setMinValue(Math.round(screenToNormalized(x) / (1F / steps)) * (1F / steps));
+            setMinValue(screenToNormalized(x));
         } else if (Thumb.MAX.equals(pressedThumb)) {
-            setMaxValue(Math.round(screenToNormalized(x) / (1F / steps)) * (1F / steps));
+            setMaxValue(screenToNormalized(x));
         }
     }
 
@@ -199,7 +176,10 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
     }
 
     private void drawThumb(float screenCoord, Canvas canvas) {
-        canvas.drawBitmap(thumbImage, screenCoord - thumbImage.getWidth() / 2, 0, paint);
+        Drawable drawable = getResources().getDrawable(R.drawable.circle);
+        drawable.setBounds( screenCoord - thumbImage.getWidth() / 2, 0 );
+        drawable.draw(canvas);
+        //canvas.drawBitmap(thumbImage, screenCoord - thumbImage.getWidth() / 2, 0, paint);
     }
 
     private Thumb evalPressedThumb(float touchX) {
@@ -238,10 +218,6 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
         invalidate();
     }
 
-    public void setSteps(int steps) {
-        this.steps = steps;
-    }
-
     private float normalizedToScreen(double normalizedCoord) {
         return (float) (padding + normalizedCoord * (getWidth() - 2 * padding));
     }
@@ -257,7 +233,6 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
     }
 
     public Bitmap drawableToBitmap(int drawableId) {
-
         Drawable drawable = getResources().getDrawable(drawableId);
 
         if (drawable instanceof BitmapDrawable) {
