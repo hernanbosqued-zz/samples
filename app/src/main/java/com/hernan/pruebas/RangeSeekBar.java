@@ -17,13 +17,11 @@ limitations under the License.
 package com.hernan.pruebas;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.RectF;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -33,20 +31,26 @@ import static android.view.MotionEvent.INVALID_POINTER_ID;
 
 public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
 
-    private final int LINE_HEIGHT = 4;
-    private final int TOUCH_AREA_GAP = 3;
+    private static final int LINE_HEIGHT = 4;
+    private static final int TOUCH_AREA_GAP = 3;
 
-    private double minValue = 0;
-    private double maxValue = 1;
+    private float minValue = 0;
+    private float maxValue = 1;
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Bitmap thumbImage = drawableToBitmap(R.drawable.circle);
+    private Drawable thumbImage = getResources().getDrawable(R.drawable.circle);
+
     private float padding;
     private Thumb pressedThumb = null;
 
     private int activePointerId = INVALID_POINTER_ID;
     private OnRangeSeekBarChangeListener listener;
-    private RectF rectF;
+    private RectF lineBounds;
+
+    private enum Thumb {
+        MIN,
+        MAX
+    }
 
     public RangeSeekBar(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -59,21 +63,20 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
     }
 
     private void init() {
-        rectF = new RectF(padding, thumbImage.getHeight() / 2 - LINE_HEIGHT / 2, getWidth() - padding, thumbImage.getHeight() / 2 + LINE_HEIGHT / 2);
-
+        lineBounds = new RectF(padding, thumbImage.getIntrinsicHeight() / 2 - LINE_HEIGHT / 2, getWidth() - padding, thumbImage.getIntrinsicHeight() / 2 + LINE_HEIGHT / 2);
         setFocusable(true);
         setFocusableInTouchMode(true);
     }
 
     public void setOnRangeSeekBarChangeListener(OnRangeSeekBarChangeListener listener) {
         this.listener = listener;
-        listener.onRangeSeekBarValuesChanged(this, getMinValue(), getMaxValue());
+        listener.onRangeSeekBarValuesChanged(getMinValue(), getMaxValue());
     }
 
     @Override
     protected synchronized void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int width = MeasureSpec.getSize(widthMeasureSpec);
-        int height = thumbImage.getHeight();
+        int height = thumbImage.getIntrinsicHeight();
         setMeasuredDimension(width, height);
     }
 
@@ -82,25 +85,21 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
         super.onDraw(canvas);
 
         paint.setStyle(Style.FILL);
-        paint.setColor(Color.GRAY);
         paint.setAntiAlias(true);
 
-        padding = thumbImage.getWidth() / 2;
-
-        // draw seek bar background line
-        rectF.left = padding;
-        rectF.right = getWidth() - padding;
-        canvas.drawRect(rectF, paint);
-
-        // draw seek bar active range line
-        rectF.left = normalizedToScreen(minValue);
-        rectF.right = normalizedToScreen(maxValue);
+        paint.setColor(Color.GRAY);
+        padding = thumbImage.getIntrinsicWidth() / 2;
+        lineBounds.left = padding;
+        lineBounds.right = getWidth() - padding;
+        canvas.drawRect(lineBounds, paint);
 
         paint.setColor(getResources().getColor(R.color.colorAccent));
-        canvas.drawRect(rectF, paint);
+        lineBounds.left = valueToScreen(minValue);
+        lineBounds.right = valueToScreen(maxValue);
+        canvas.drawRect(lineBounds, paint);
 
-        drawThumb(normalizedToScreen(minValue), canvas);
-        drawThumb(normalizedToScreen(maxValue), canvas);
+        drawThumb(valueToScreen(minValue), canvas);
+        drawThumb(valueToScreen(maxValue), canvas);
     }
 
     @Override
@@ -135,7 +134,7 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
                 if (pressedThumb != null) {
                     trackTouchEvent(event);
                     if (listener != null) {
-                        listener.onRangeSeekBarValuesChanged(this, getMinValue(), getMaxValue());
+                        listener.onRangeSeekBarValuesChanged(getMinValue(), getMaxValue());
                     }
                 }
                 break;
@@ -146,7 +145,7 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
                 pressedThumb = null;
                 invalidate();
                 if (listener != null) {
-                    listener.onRangeSeekBarValuesChanged(this, getMinValue(), getMaxValue());
+                    listener.onRangeSeekBarValuesChanged(getMinValue(), getMaxValue());
                 }
                 break;
 
@@ -163,9 +162,9 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
         final float x = event.getX(pointerIndex);
 
         if (Thumb.MIN.equals(pressedThumb)) {
-            setMinValue(screenToNormalized(x));
+            setMinValue(screenToValue(x));
         } else if (Thumb.MAX.equals(pressedThumb)) {
-            setMaxValue(screenToNormalized(x));
+            setMaxValue(screenToValue(x));
         }
     }
 
@@ -177,9 +176,11 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
 
     private void drawThumb(float screenCoord, Canvas canvas) {
         Drawable drawable = getResources().getDrawable(R.drawable.circle);
-        drawable.setBounds( screenCoord - thumbImage.getWidth() / 2, 0 );
+        drawable.setBounds((int) screenCoord - drawable.getIntrinsicWidth() / 2,
+                0,
+                (int) screenCoord - drawable.getIntrinsicWidth() / 2 + drawable.getIntrinsicWidth(),
+                drawable.getIntrinsicHeight());
         drawable.draw(canvas);
-        //canvas.drawBitmap(thumbImage, screenCoord - thumbImage.getWidth() / 2, 0, paint);
     }
 
     private Thumb evalPressedThumb(float touchX) {
@@ -196,62 +197,44 @@ public class RangeSeekBar extends android.support.v7.widget.AppCompatImageView {
         return result;
     }
 
-    private boolean isInThumbRange(float touchX, double normalizedThumbValue) {
-        return Math.abs(touchX - normalizedToScreen(normalizedThumbValue)) <= thumbImage.getWidth() * TOUCH_AREA_GAP;
+    private boolean isInThumbRange(float screenCoord, float value) {
+        return Math.abs(screenCoord - valueToScreen(value)) <= thumbImage.getIntrinsicWidth() * TOUCH_AREA_GAP;
     }
 
-    public double getMinValue() {
+    public float getMinValue() {
         return minValue;
     }
 
-    public double getMaxValue() {
+    public float getMaxValue() {
         return maxValue;
     }
 
-    private void setMinValue(double value) {
-        minValue = Math.max(0d, Math.min(1d, Math.min(value, maxValue)));
+    private void setMinValue(float value) {
+        minValue = Math.max(0, Math.min(value, maxValue));
         invalidate();
     }
 
-    private void setMaxValue(double value) {
-        maxValue = Math.max(0d, Math.min(1d, Math.max(value, minValue)));
+    private void setMaxValue(float value) {
+        maxValue = Math.min(1, Math.max(value, minValue));
         invalidate();
     }
 
-    private float normalizedToScreen(double normalizedCoord) {
-        return (float) (padding + normalizedCoord * (getWidth() - 2 * padding));
+    private float valueToScreen(float normalizedCoord) {
+        return padding + normalizedCoord * (getWidth() - 2 * padding);
     }
 
-    private double screenToNormalized(float screenCoord) {
+    private float screenToValue(float screenCoord) {
         int width = getWidth();
         if (width <= 2 * padding) {
-            return 0d;
+            return 0;
         } else {
-            double result = (screenCoord - padding) / (width - 2 * padding);
-            return Math.min(1d, Math.max(0d, result));
+            float result = (screenCoord - padding) / (width - 2 * padding);
+            return Math.min(1, Math.max(0, result));
         }
-    }
-
-    public Bitmap drawableToBitmap(int drawableId) {
-        Drawable drawable = getResources().getDrawable(drawableId);
-
-        if (drawable instanceof BitmapDrawable) {
-            return ((BitmapDrawable) drawable).getBitmap();
-        }
-
-        Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
-        drawable.draw(canvas);
-
-        return bitmap;
     }
 
     interface OnRangeSeekBarChangeListener {
-        void onRangeSeekBarValuesChanged(RangeSeekBar bar, double minValue, double maxValue);
-    }
+        void onRangeSeekBarValuesChanged(float minValue, float maxValue);
 
-    private enum Thumb {
-        MIN, MAX
     }
 }
