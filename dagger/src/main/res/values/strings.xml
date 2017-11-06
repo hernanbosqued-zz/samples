@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">dagger</string>
+
+    <string-array name="my_string_array">
+        <item>Test 1</item>
+        <item>Test 2</item>
+        <item>Test 3</item>
+        <item>Test 4</item>
+        <item>Test 5</item>
+        <item>Test 6</item>
+    </string-array>
 </resources>
