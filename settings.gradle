@@ -1,1 +1,1 @@
-include ':slider', ':dagger'
+include ':slider', ':dagger', ':room'
