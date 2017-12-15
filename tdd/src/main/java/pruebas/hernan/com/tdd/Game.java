@@ -39,7 +39,7 @@ class Game implements FrameVisitor {
     @Override
     public void accept(Strike strike) {
         int index = shots.indexOf(strike.shots.get(0));
-        total += strike.getScore() + shots.get(index + 1).score + shots.get(index + 1).score;
+        total += strike.getScore() + shots.get(index + 1).score + shots.get(index + 2).score;
     }
 
     @Override

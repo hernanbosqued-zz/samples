@@ -9,7 +9,7 @@ import static org.junit.Assert.*;
 public class ExampleUnitTest {
 
     @Before
-    public void before(){
+    public void before() {
 
     }
 
@@ -17,16 +17,16 @@ public class ExampleUnitTest {
     public void mustGet60() throws Exception {
         Game game = new Game();
 
-        game.addFrame(new Frame(new Shot(1),new Shot(2)));
-        game.addFrame(new Frame(new Shot(3),new Shot(4)));
-        game.addFrame(new Frame(new Shot(5),new Shot(1)));
-        game.addFrame(new Frame(new Shot(2),new Shot(3)));
-        game.addFrame(new Frame(new Shot(4),new Shot(5)));
-        game.addFrame(new Frame(new Shot(1),new Shot(2)));
-        game.addFrame(new Frame(new Shot(3),new Shot(4)));
-        game.addFrame(new Frame(new Shot(5),new Shot(1)));
-        game.addFrame(new Frame(new Shot(2),new Shot(3)));
-        game.addFrame(new Frame(new Shot(4),new Shot(5)));
+        game.addFrame(new Frame(new Shot(1), new Shot(2)));
+        game.addFrame(new Frame(new Shot(3), new Shot(4)));
+        game.addFrame(new Frame(new Shot(5), new Shot(1)));
+        game.addFrame(new Frame(new Shot(2), new Shot(3)));
+        game.addFrame(new Frame(new Shot(4), new Shot(5)));
+        game.addFrame(new Frame(new Shot(1), new Shot(2)));
+        game.addFrame(new Frame(new Shot(3), new Shot(4)));
+        game.addFrame(new Frame(new Shot(5), new Shot(1)));
+        game.addFrame(new Frame(new Shot(2), new Shot(3)));
+        game.addFrame(new Frame(new Shot(4), new Shot(5)));
 
         assertEquals(60, game.getTotal());
     }
@@ -35,34 +35,52 @@ public class ExampleUnitTest {
     public void mustGet90() throws Exception {
         Game game = new Game();
 
-        game.addFrame(new Frame(new Shot(9),new Shot(0)));
-        game.addFrame(new Frame(new Shot(9),new Shot(0)));
-        game.addFrame(new Frame(new Shot(9),new Shot(0)));
-        game.addFrame(new Frame(new Shot(9),new Shot(0)));
-        game.addFrame(new Frame(new Shot(9),new Shot(0)));
-        game.addFrame(new Frame(new Shot(9),new Shot(0)));
-        game.addFrame(new Frame(new Shot(9),new Shot(0)));
-        game.addFrame(new Frame(new Shot(9),new Shot(0)));
-        game.addFrame(new Frame(new Shot(9),new Shot(0)));
-        game.addFrame(new Frame(new Shot(9),new Shot(0)));
+        game.addFrame(new Frame(new Shot(9), new Shot(0)));
+        game.addFrame(new Frame(new Shot(9), new Shot(0)));
+        game.addFrame(new Frame(new Shot(9), new Shot(0)));
+        game.addFrame(new Frame(new Shot(9), new Shot(0)));
+        game.addFrame(new Frame(new Shot(9), new Shot(0)));
+        game.addFrame(new Frame(new Shot(9), new Shot(0)));
+        game.addFrame(new Frame(new Shot(9), new Shot(0)));
+        game.addFrame(new Frame(new Shot(9), new Shot(0)));
+        game.addFrame(new Frame(new Shot(9), new Shot(0)));
+        game.addFrame(new Frame(new Shot(9), new Shot(0)));
 
         assertEquals(90, game.getTotal());
+    }
+
+    @Test
+    public void mustGet70() throws Exception {
+        Game game = new Game();
+
+        game.addFrame(new Strike());
+        game.addFrame(new Frame(new Shot(1), new Shot(1)));
+        game.addFrame(new Strike());
+        game.addFrame(new Frame(new Shot(1), new Shot(1)));
+        game.addFrame(new Strike());
+        game.addFrame(new Frame(new Shot(1), new Shot(1)));
+        game.addFrame(new Strike());
+        game.addFrame(new Frame(new Shot(1), new Shot(1)));
+        game.addFrame(new Strike());
+        game.addFrame(new Frame(new Shot(1), new Shot(1)));
+
+        assertEquals(70, game.getTotal());
     }
 
     @Test
     public void mustGet190() throws Exception {
         Game game = new Game();
 
-        game.addFrame(new Spare(new Shot(9),new Shot(1)));
-        game.addFrame(new Spare(new Shot(9),new Shot(1)));
-        game.addFrame(new Spare(new Shot(9),new Shot(1)));
-        game.addFrame(new Spare(new Shot(9),new Shot(1)));
-        game.addFrame(new Spare(new Shot(9),new Shot(1)));
-        game.addFrame(new Spare(new Shot(9),new Shot(1)));
-        game.addFrame(new Spare(new Shot(9),new Shot(1)));
-        game.addFrame(new Spare(new Shot(9),new Shot(1)));
-        game.addFrame(new Spare(new Shot(9),new Shot(1)));
-        game.addFrame(new Spare(new Shot(9),new Shot(1)));
+        game.addFrame(new Spare(new Shot(9), new Shot(1)));
+        game.addFrame(new Spare(new Shot(9), new Shot(1)));
+        game.addFrame(new Spare(new Shot(9), new Shot(1)));
+        game.addFrame(new Spare(new Shot(9), new Shot(1)));
+        game.addFrame(new Spare(new Shot(9), new Shot(1)));
+        game.addFrame(new Spare(new Shot(9), new Shot(1)));
+        game.addFrame(new Spare(new Shot(9), new Shot(1)));
+        game.addFrame(new Spare(new Shot(9), new Shot(1)));
+        game.addFrame(new Spare(new Shot(9), new Shot(1)));
+        game.addFrame(new Spare(new Shot(9), new Shot(1)));
 
         //EXTRA SHOT
         game.addShot(new Shot(9));
@@ -93,7 +111,7 @@ public class ExampleUnitTest {
     }
 
     @After
-    public void after(){
+    public void after() {
 
     }
 }
