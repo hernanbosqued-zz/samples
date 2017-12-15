@@ -5,8 +5,6 @@ import javax.inject.Inject;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
 
 class InsertUseCase extends UseCase<Boolean, String> {
 

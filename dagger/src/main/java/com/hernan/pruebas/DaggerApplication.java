@@ -18,7 +18,6 @@ public class DaggerApplication extends Application{
         instance = this;
 
         AppComponent appcomponent = DaggerAppComponent.builder().appModule(new AppModule(this)).build();
-        appcomponent.inject(this);
         sessionComponent = appcomponent.sessionComponent(new SessionModule());
     }
 
